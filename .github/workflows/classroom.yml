@@ -6,6 +6,8 @@ on:
   workflow_dispatch:
 
 permissions:
+  checks: write
+  actions: read
   contents: read
 
 jobs:
@@ -15,10 +17,10 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Check out submission
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -26,4 +28,68 @@ jobs:
         run: python -m pip install pytest
 
       - name: Run tiered autograder
-        run: python -m pytest -v test_unit1_lab.py
+        id: unit-1-lab
+        continue-on-error: true
+        run: |
+          python -m pytest -v test_unit1_lab.py --junitxml=results.xml || true
+          python - <<'EOF'
+          import base64, glob, json, os, re
+          import xml.etree.ElementTree as ET
+
+          POINTS = 0.5      # each of the 20 tests
+          MAX_SCORE = 10    # gold = 20 tests
+
+          files = [f for f in glob.glob("unit[01]_lab_*.py")
+                   if re.match(r"unit[01]_lab_(bronze|silver|gold)\.py$", f, re.I)]
+          tier = "none"
+          if files:
+              tier = re.search(r"(bronze|silver|gold)", files[0], re.I).group(1).lower()
+          cap = {"bronze": 7, "silver": 8.5, "gold": 10}.get(tier, 0)
+
+          tests = []
+          if os.path.exists("results.xml"):
+              for case in ET.parse("results.xml").getroot().iter("testcase"):
+                  name = case.get("name")
+                  failure = case.find("failure")
+                  if failure is None:
+                      failure = case.find("error")
+                  skipped = case.find("skipped")
+                  if failure is not None:
+                      status, score = "fail", 0.0
+                      message = (failure.get("message") or "Test failed").splitlines()[0][:300]
+                  elif skipped is not None:
+                      status, score = "fail", 0.0
+                      message = f"Not part of the {tier} tier (max {cap:g}/10)"
+                  else:
+                      status, score = "pass", POINTS
+                      message = f"+{POINTS:g}"
+                  tests.append({
+                      "name": name,
+                      "status": status,
+                      "score": score,
+                      "message": message,
+                      "test_code": case.get("classname", "") + "::" + name,
+                      "filename": "test_unit1_lab.py",
+                      "line_no": 0,
+                      "duration": float(case.get("time") or 0),
+                  })
+
+          total = sum(t["score"] for t in tests)
+          print(f"Tier: {tier} | Score: {total:g}/{MAX_SCORE} (tier cap {cap:g}/10)")
+          result = {
+              "version": 1,
+              "status": "pass" if total > 0 else "fail",
+              "max_score": MAX_SCORE,
+              "tests": tests,
+          }
+          encoded = base64.b64encode(json.dumps(result).encode()).decode()
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"result={encoded}\n")
+          EOF
+
+      - name: Autograding Reporter
+        uses: classroom-resources/autograding-grading-reporter@v1
+        env:
+          UNIT-1-LAB_RESULTS: "${{ steps.unit-1-lab.outputs.result }}"
+        with:
+          runners: unit-1-lab
