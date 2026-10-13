@@ -14,7 +14,7 @@ A skipped test earns no marks, so the maximum grade is capped by the tier:
   bronze = 14/20 = 7/10     silver = 17/20 = 8.5/10     gold = 20/20 = 10/10
 
 GitHub Classroom: use the "Run command" / pytest grading test with
-  pytest test_unit1_halloween_lab.py
+  pytest test_unit1_lab.py
 or add one test per entry below (0.5 points each). Keep conftest.py beside
 this file; it prints the final "GRADE: x/10" line.
 """
