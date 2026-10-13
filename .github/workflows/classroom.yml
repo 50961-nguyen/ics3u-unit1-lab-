@@ -1,9 +1,9 @@
-name: GitHub Classroom Autograding
+name: Autograding Tests
 
 on:
   push:
-  pull_request:
   workflow_dispatch:
+  repository_dispatch:
 
 permissions:
   checks: write
@@ -11,12 +11,11 @@ permissions:
   contents: read
 
 jobs:
-  autograding:
-    name: Run lab autograder
+  run-autograding-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    if: github.actor != 'github-classroom[bot]'
     steps:
-      - name: Check out submission
+      - name: Checkout code
         uses: actions/checkout@v5
 
       - name: Set up Python
@@ -27,69 +26,228 @@ jobs:
       - name: Install pytest
         run: python -m pip install pytest
 
-      - name: Run tiered autograder
-        id: unit-1-lab
-        continue-on-error: true
-        run: |
-          python -m pytest -v test_unit1_lab.py --junitxml=results.xml || true
-          python - <<'EOF'
-          import base64, glob, json, os, re
-          import xml.etree.ElementTree as ET
+      - name: Bronze - File named correctly
+        id: b01-file-named-correctly
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Bronze - File named correctly
+          setup-command: ""
+          command: python -m pytest test_unit1_lab.py::test_b01_file_named_correctly -q | grep -q " passed"
+          timeout: 10
+          max-score: 1
 
-          POINTS = 0.5      # each of the 20 tests
-          MAX_SCORE = 10    # gold = 20 tests
+      - name: Bronze - Welcome message
+        id: b02-welcome-message
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Bronze - Welcome message
+          setup-command: ""
+          command: python -m pytest test_unit1_lab.py::test_b02_welcome_message -q | grep -q " passed"
+          timeout: 10
+          max-score: 1
 
-          files = [f for f in glob.glob("unit[01]_lab_*.py")
-                   if re.match(r"unit[01]_lab_(bronze|silver|gold)\.py$", f, re.I)]
-          tier = "none"
-          if files:
-              tier = re.search(r"(bronze|silver|gold)", files[0], re.I).group(1).lower()
-          cap = {"bronze": 7, "silver": 8.5, "gold": 10}.get(tier, 0)
+      - name: Bronze - Asks for name and age
+        id: b03-asks-for-name-and-age
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Bronze - Asks for name and age
+          setup-command: ""
+          command: python -m pytest test_unit1_lab.py::test_b03_asks_for_name_and_age -q | grep -q " passed"
+          timeout: 10
+          max-score: 1
 
-          tests = []
-          if os.path.exists("results.xml"):
-              for case in ET.parse("results.xml").getroot().iter("testcase"):
-                  name = case.get("name")
-                  failure = case.find("failure")
-                  if failure is None:
-                      failure = case.find("error")
-                  skipped = case.find("skipped")
-                  if failure is not None:
-                      status, score = "fail", 0.0
-                      message = (failure.get("message") or "Test failed").splitlines()[0][:300]
-                  elif skipped is not None:
-                      status, score = "fail", 0.0
-                      message = f"Not part of the {tier} tier (max {cap:g}/10)"
-                  else:
-                      status, score = "pass", POINTS
-                      message = f"+{POINTS:g}"
-                  tests.append({
-                      "name": name,
-                      "status": status,
-                      "score": score,
-                      "message": message,
-                      "test_code": case.get("classname", "") + "::" + name,
-                      "filename": "test_unit1_lab.py",
-                      "line_no": 0,
-                      "duration": float(case.get("time") or 0),
-                  })
+      - name: Bronze - Greeting output
+        id: b04-greeting-output
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Bronze - Greeting output
+          setup-command: ""
+          command: python -m pytest test_unit1_lab.py::test_b04_greeting_output -q | grep -q " passed"
+          timeout: 10
+          max-score: 1
 
-          total = sum(t["score"] for t in tests)
-          print(f"Tier: {tier} | Score: {total:g}/{MAX_SCORE} (tier cap {cap:g}/10)")
-          result = {
-              "version": 1,
-              "status": "pass" if total > 0 else "fail",
-              "max_score": MAX_SCORE,
-              "tests": tests,
-          }
-          encoded = base64.b64encode(json.dumps(result).encode()).decode()
-          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-              f.write(f"result={encoded}\n")
-          EOF
+      - name: Bronze - Greeting other values
+        id: b05-greeting-other-values
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Bronze - Greeting other values
+          setup-command: ""
+          command: python -m pytest test_unit1_lab.py::test_b05_greeting_other_values -q | grep -q " passed"
+          timeout: 10
+          max-score: 1
+
+      - name: Bronze - Name variable value
+        id: b06-name-variable-value
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Bronze - Name variable value
+          setup-command: ""
+          command: python -m pytest test_unit1_lab.py::test_b06_name_variable_value -q | grep -q " passed"
+          timeout: 10
+          max-score: 1
+
+      - name: Bronze - Age variable value
+        id: b07-age-variable-value
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Bronze - Age variable value
+          setup-command: ""
+          command: python -m pytest test_unit1_lab.py::test_b07_age_variable_value -q | grep -q " passed"
+          timeout: 10
+          max-score: 1
+
+      - name: Bronze - Age 15 enters 13plus
+        id: b08-age-15-enters-13plus
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Bronze - Age 15 enters 13plus
+          setup-command: ""
+          command: python -m pytest test_unit1_lab.py::test_b08_age_15_enters_13plus -q | grep -q " passed"
+          timeout: 10
+          max-score: 1
+
+      - name: Bronze - Age 13 boundary
+        id: b09-age-13-boundary
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Bronze - Age 13 boundary
+          setup-command: ""
+          command: python -m pytest test_unit1_lab.py::test_b09_age_13_boundary -q | grep -q " passed"
+          timeout: 10
+          max-score: 1
+
+      - name: Bronze - Age 12 family
+        id: b10-age-12-family
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Bronze - Age 12 family
+          setup-command: ""
+          command: python -m pytest test_unit1_lab.py::test_b10_age_12_family -q | grep -q " passed"
+          timeout: 10
+          max-score: 1
+
+      - name: Bronze - Age 5 family
+        id: b11-age-5-family
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Bronze - Age 5 family
+          setup-command: ""
+          command: python -m pytest test_unit1_lab.py::test_b11_age_5_family -q | grep -q " passed"
+          timeout: 10
+          max-score: 1
+
+      - name: Bronze - Age 70 enters 13plus
+        id: b12-age-70-enters-13plus
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Bronze - Age 70 enters 13plus
+          setup-command: ""
+          command: python -m pytest test_unit1_lab.py::test_b12_age_70_enters_13plus -q | grep -q " passed"
+          timeout: 10
+          max-score: 1
+
+      - name: Bronze - Output order
+        id: b13-output-order
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Bronze - Output order
+          setup-command: ""
+          command: python -m pytest test_unit1_lab.py::test_b13_output_order -q | grep -q " passed"
+          timeout: 10
+          max-score: 1
+
+      - name: Bronze - Has comments
+        id: b14-has-comments
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Bronze - Has comments
+          setup-command: ""
+          command: python -m pytest test_unit1_lab.py::test_b14_has_comments -q | grep -q " passed"
+          timeout: 10
+          max-score: 1
+
+      - name: Silver - Total cost
+        id: s01-total-cost
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Silver - Total cost
+          setup-command: ""
+          command: python -m pytest test_unit1_lab.py::test_s01_total_cost -q | grep -q " passed"
+          timeout: 10
+          max-score: 1
+
+      - name: Silver - Senior and child discount
+        id: s02-senior-and-child-discount
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Silver - Senior and child discount
+          setup-command: ""
+          command: python -m pytest test_unit1_lab.py::test_s02_senior_and_child_discount -q | grep -q " passed"
+          timeout: 10
+          max-score: 1
+
+      - name: Silver - Regular and boundaries
+        id: s03-regular-and-boundaries
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Silver - Regular and boundaries
+          setup-command: ""
+          command: python -m pytest test_unit1_lab.py::test_s03_regular_and_boundaries -q | grep -q " passed"
+          timeout: 10
+          max-score: 1
+
+      - name: Gold - Rewards member yes
+        id: g01-rewards-member-yes
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Gold - Rewards member yes
+          setup-command: ""
+          command: python -m pytest test_unit1_lab.py::test_g01_rewards_member_yes -q | grep -q " passed"
+          timeout: 10
+          max-score: 1
+
+      - name: Gold - Rewards member no and invalid
+        id: g02-rewards-member-no-and-invalid
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Gold - Rewards member no and invalid
+          setup-command: ""
+          command: python -m pytest test_unit1_lab.py::test_g02_rewards_member_no_and_invalid -q | grep -q " passed"
+          timeout: 10
+          max-score: 1
+
+      - name: Gold - Group package
+        id: g03-group-package
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Gold - Group package
+          setup-command: ""
+          command: python -m pytest test_unit1_lab.py::test_g03_group_package -q | grep -q " passed"
+          timeout: 10
+          max-score: 1
 
       - name: Autograding Reporter
         uses: classroom-resources/autograding-grading-reporter@v1
         env:
-          UNIT-1-LAB_RESULTS: "${{ steps.unit-1-lab.outputs.result }}"
+          B01-FILE-NAMED-CORRECTLY_RESULTS: "${{steps.b01-file-named-correctly.outputs.result}}"
+          B02-WELCOME-MESSAGE_RESULTS: "${{steps.b02-welcome-message.outputs.result}}"
+          B03-ASKS-FOR-NAME-AND-AGE_RESULTS: "${{steps.b03-asks-for-name-and-age.outputs.result}}"
+          B04-GREETING-OUTPUT_RESULTS: "${{steps.b04-greeting-output.outputs.result}}"
+          B05-GREETING-OTHER-VALUES_RESULTS: "${{steps.b05-greeting-other-values.outputs.result}}"
+          B06-NAME-VARIABLE-VALUE_RESULTS: "${{steps.b06-name-variable-value.outputs.result}}"
+          B07-AGE-VARIABLE-VALUE_RESULTS: "${{steps.b07-age-variable-value.outputs.result}}"
+          B08-AGE-15-ENTERS-13PLUS_RESULTS: "${{steps.b08-age-15-enters-13plus.outputs.result}}"
+          B09-AGE-13-BOUNDARY_RESULTS: "${{steps.b09-age-13-boundary.outputs.result}}"
+          B10-AGE-12-FAMILY_RESULTS: "${{steps.b10-age-12-family.outputs.result}}"
+          B11-AGE-5-FAMILY_RESULTS: "${{steps.b11-age-5-family.outputs.result}}"
+          B12-AGE-70-ENTERS-13PLUS_RESULTS: "${{steps.b12-age-70-enters-13plus.outputs.result}}"
+          B13-OUTPUT-ORDER_RESULTS: "${{steps.b13-output-order.outputs.result}}"
+          B14-HAS-COMMENTS_RESULTS: "${{steps.b14-has-comments.outputs.result}}"
+          S01-TOTAL-COST_RESULTS: "${{steps.s01-total-cost.outputs.result}}"
+          S02-SENIOR-AND-CHILD-DISCOUNT_RESULTS: "${{steps.s02-senior-and-child-discount.outputs.result}}"
+          S03-REGULAR-AND-BOUNDARIES_RESULTS: "${{steps.s03-regular-and-boundaries.outputs.result}}"
+          G01-REWARDS-MEMBER-YES_RESULTS: "${{steps.g01-rewards-member-yes.outputs.result}}"
+          G02-REWARDS-MEMBER-NO-AND-INVALID_RESULTS: "${{steps.g02-rewards-member-no-and-invalid.outputs.result}}"
+          G03-GROUP-PACKAGE_RESULTS: "${{steps.g03-group-package.outputs.result}}"
         with:
-          runners: unit-1-lab
+          runners: b01-file-named-correctly,b02-welcome-message,b03-asks-for-name-and-age,b04-greeting-output,b05-greeting-other-values,b06-name-variable-value,b07-age-variable-value,b08-age-15-enters-13plus,b09-age-13-boundary,b10-age-12-family,b11-age-5-family,b12-age-70-enters-13plus,b13-output-order,b14-has-comments,s01-total-cost,s02-senior-and-child-discount,s03-regular-and-boundaries,g01-rewards-member-yes,g02-rewards-member-no-and-invalid,g03-group-package
